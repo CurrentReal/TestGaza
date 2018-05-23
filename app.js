@@ -161,6 +161,17 @@ app.post('/upload', upload.single('userfile'), (req, res) => {
   console.log(req.file);
   res.send('Uploaded: '+req.file.originalname);
 });
+app.get('/count', (req, res) => {
+  if(req.cookies.count) {
+    var count = parseInt(req.cookies.count);
+  } else {
+    var count = 0;
+  }
+  count = count + 1;
+  res.cookie('count', count);
+  res.send('Count : '+  count);
+});
+
 // test sample code end
 
 // catch 404 and forward to error handler
