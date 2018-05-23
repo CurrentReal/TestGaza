@@ -20,6 +20,7 @@ var storage = multer.diskStorage({
   }
 })
 var upload = multer({ storage: storage })
+const db = require('./config/database');
 // extra module end
 
 var app = express();
@@ -42,48 +43,116 @@ app.use('/user', express.static('uploads'));
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.locals.pretty = true;
 
 // test sample code start
-app.get('/topic/new', (req, res) => {
-  fs.readdir('data', (err, files) => {
-    if(err) {
+app.get('/topic/add', (req, res) => {
+  db.select('id', 'title').from('topic')
+    .then(topics => { res.render('sampleAdd', {topics: topics}); })
+    .catch(err => {
       console.log(err);
       res.status(500).send('Internal Server Error');
-    }
-    res.render('sampleAdd', {topics: files});
-  });
+    });
 });
-app.get(['/topic', '/topic/:id'], (req, res) => {
-  fs.readdir('data', (err, files) => {
-    if(err) {
-      console.log(err);
-      res.status(500).send('Internal Server Error');
-    }
-    var id = req.params.id;
-    if(id) {
-      fs.readFile('data/'+id, 'utf8', (err, data) => {
-        if(err) {
-          console.log(err);
-          res.status(500).send('Internal Server Error');
-        }
-        res.render('sampleList', {topics: files, title: id, description: data});
-      });
-    }
-    else {
-      res.render('sampleList', {topics: files, title: 'Welcome', description: 'JS'});
-    }
-  });
-});
-app.post('/topic', (req, res) => {
+app.post('/topic/add', (req, res) => {
   var title = req.body.title;
   var description = req.body.description;
-  fs.writeFile('data/'+title, description, (err) => {
-    if(err) {
+  var author = req.body.author;
+  db('topic')
+    .insert({title: title, description: description, author: author})
+    .then(result => { res.redirect('/topic/'+result); })
+    .catch(err => {
       console.log(err);
       res.status(500).send('Internal Server Error');
-    }
-    res.redirect('/topic/'+title);
-  });
+    });
+});
+app.get(['/topic', '/topic/:id'], (req, res) => {
+  db.select('id', 'title').from('topic')
+    .then(topics => {
+      var id = req.params.id;
+      if(id) {
+        db('topic').whereRaw('id=?', [id])
+          .then(topic => { res.render('sampleList', {topics: topics, topic:topic[0]}); })
+          .catch(err => {
+            console.log(err);
+            res.status(500).send('Internal Server Error');
+          });
+      } else {
+        res.render('sampleList', {topics: topics});
+      }
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).send('Internal Server Error');
+    });
+});
+app.get(['/topic/:id/edit'], (req, res) => {
+  db.select('id', 'title').from('topic')
+    .then(topics => {
+      var id = req.params.id;
+      if(id) {
+        db('topic').whereRaw('id=?', [id])
+          .then(topic => { res.render('sampleEdit', {topics: topics, topic:topic[0]}); })
+          .catch(err => {
+            console.log(err);
+            res.status(500).send('Internal Server Error');
+          });
+      } else {
+        res.render('sampleList', {topics: topics});
+      }
+    })
+    .catch(err => {
+      console.log("There is no id.");
+      res.status(500).send('Internal Server Error');
+    });
+});
+app.post(['/topic/:id/edit'], (req, res) => {
+  var id = req.params.id;
+  var title = req.body.title;
+  var description = req.body.description;
+  var author = req.body.author;
+  db('topic')
+    .where({id: id})
+    .update({title: title, description: description, author: author})
+    .then(result => { res.redirect('/topic/'+id); })
+    .catch(err => {
+      console.log(err);
+      res.status(500).send('Internal Server Error');
+    });
+});
+app.get('/topic/:id/delete', (req, res) => {
+  db.select('id', 'title').from('topic')
+    .then(topics => {
+      var id = req.params.id;
+      db('topic').whereRaw('id=?', [id])
+      .then(topic => {
+        if(topic.length == 0) {
+          console.log(err);
+          res.status(500).send('Internal Server Error');
+        } else {
+          res.render('sampleDel', {topics: topics, topic: topic[0]});
+        }
+      })
+      .catch(err => {
+        console.log(err);
+        res.status(500).send('Internal Server Error');
+      });
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).send('Internal Server Error');
+    });
+});
+app.post('/topic/:id/delete', (req, res) => {
+  var id = req.params.id;
+  db('topic')
+    .whereRaw('id=?', [id])
+    .del()
+    .then(result => { res.redirect('/topic'); })
+    .catch(err => {
+      console.log(err);
+      res.status(500).send('Internal Server Error');
+    });
 });
 app.get('/upload', (req, res) => {
   res.render('sampleUpload');
