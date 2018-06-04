@@ -10,7 +10,7 @@ var topicRouter = require('./routes/topic');
 
 // extra module start
 var session = require('express-session');
-//var FileStore = require('session-file-store')(session);
+// var FileStore = require('session-file-store')(session);
 var MySQLStore = require('express-mysql-session')(session);
 var bodyParser = require("body-parser");
 var fs = require('fs');
@@ -41,11 +41,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/topic', topicRouter);
-// sample use code
-app.use('/user', express.static('uploads'));
 
+// sample use code
+app.locals.pretty = true;
+app.use('/user', express.static('uploads'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+
 var options = require('./config/dbinfo');
 app.use(session({
   secret: '123!@#QWE',
@@ -54,7 +56,9 @@ app.use(session({
   //store: new FileStore()
   store: new MySQLStore(options)
 }));
-app.locals.pretty = true;
+var passport = require ('./config/passport')(app);
+var authRouter = require('./routes/auth')(passport);
+app.use('/auth', authRouter);
 
 app.get('/upload', (req, res) => {
   res.render('sampleUpload');
@@ -117,56 +121,57 @@ app.get('/cart', function(req, res){
     <a href="/products">Products List</a>
   `);
 });
-app.post('/auth/login', (req, res) => {
-  var user = {
-    username: 'lee',
-    password: '111',
-    displayName: 'Lee'
-  };
-  var uname = req.body.username;
-  var pwd = req.body.password;
-  if(uname = user.username && pwd == user.password) {
-    req.session.displayName = user.displayName;
-    req.session.save(() => {
-      res.redirect('/welcome');
-    });
-  } else {
-    res.send('who are you? <a href="/auth/login">login</a>');
-  }
-});
 app.get('/welcome', (req, res) => {
-  if(req.session.displayName) {
+  if(req.user && req.user.displayName) {
     res.send(`
-      <h1>Hello, ${req.session.displayName}</h1>
+      <h1>Hello, ${req.user.displayName}</h1>
       <a href="/auth/logout">logout</a>`);
   } else {
     res.send(`
       <h1>Welcome</h1>
-      <a href="/auth/login">Login</a>`);
+      <ul>
+        <li><a href="/auth/login">Login</a></li>
+        <li><a href="/auth/register">Register</a></li>
+      </ul>
+      `);
   }
 });
-app.get('/auth/login', (req, res) => {
-  var output = `
-  <h1>Login</h1>
-  <form action="/auth/login" method="post">
-    <p>
-      <input type="text" name="username" placeholder="username">
-    </p>
-    <p>
-      <input type="text" name="password" placeholder="password">
-    </P>
-    <p>
-      <input type="submit">
-    </p>
-  </form>`;
-  res.send(output);
-});
-app.get('/auth/logout', (req, res) => {
-  delete req.session.displayName;
-  req.session.save(() => {
-    res.redirect('/welcome');
-  });
-});
+
+var users = [
+  {
+    authId: 'local:lee',
+    username: 'lee',
+    password: 'meQHism6KZ7lBcU3kmi6smYd+MKwdJgZr19KLIdSRU6UAktRly25UosDh9YMTHNXnc3rpqDMp5kVG92vYmr1o1eHjitCPOgt0oSPMKI3rqX6XuCHOe/ypwJGHD+UowlxDDd4walnUmIFacnEdo/5tkv5g81PAZkyYZ7wx28PuzY=',
+    salt: 'K7/xBDuOBUNTWuv3AIiWW5HoSkF9d0WlGBqqXsbtCQn4JP+2Pa3O1x0PTZX8WsTqAAAROi8TUtEZPn2X69QZnA==',
+    displayName: 'LEE'
+  }
+];
+// app.post('/auth/login', (req, res) => {
+//   var uname = req.body.username;
+//   var pwd = req.body.password;
+//   for(var i = 0; i < users.length; i++) {
+//     var user = users[i];
+//     if(uname == user.username) {
+//       return hasher({ password:pwd, salt: user.salt }, (err, pass, salt, hash) => {
+//         if(hash == user.password) {
+//           req.session.displayName = user.displayName;
+//           req.session.save(() => {
+//             res.redirect('/welcome');
+//           });
+//         } else {
+//           res.send('who are you? <a href="/auth/login">login</a>');
+//         }
+//       });
+//     }
+//     // if(uname == user.username && sha256(pwd+user.salt) == user.password) {
+//     //   req.session.displayName = user.displayName;
+//     //   return req.session.save(() => {
+//     //     res.redirect('/welcome');
+//     //   });
+//     // }
+//   }
+//   res.send('who are you? <a href="/auth/login">login</a>');
+// });
 // test sample code end
 
 // catch 404 and forward to error handler
