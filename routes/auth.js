@@ -30,21 +30,27 @@ module.exports = function(passport) {
     });
   });
   router.get('/register', (req, res) => {
-    res.render('sampleRegist');
+    db.select('id', 'title').from('topic')
+      .then(rows => {
+        res.render('auth/sampleRegist', {topics: rows});
+      });
   });
   router.post('/login',
-    passport.authenticate('local', { successRedirect: '/welcome',
+    passport.authenticate('local', { successRedirect: '/topic',
                                      failureRedirect: '/auth/login',
                                      failureFlash: false })
   );
   router.get('/login', (req, res) => {
-    res.render('sampleLogin');
+    db.select('id', 'title').from('topic')
+      .then(rows => {
+        res.render('auth/sampleLogin', {topics: rows});
+      });
   });
 
   router.get('/logout', (req, res) => {
     req.logout();
     req.session.save(() => {
-      res.redirect('/welcome');
+      res.redirect('/topic');
     });
   });
 
@@ -52,7 +58,7 @@ module.exports = function(passport) {
     passport.authenticate('facebook', { scope: 'email'})
   );
   router.get('/facebook/callback',
-    passport.authenticate('facebook', { successRedirect: '/welcome',
+    passport.authenticate('facebook', { successRedirect: '/topic',
                                         failureRedirect: '/auth/login' }));
 
   return router;

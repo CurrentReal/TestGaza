@@ -13,7 +13,7 @@ router.get('/:id/delete', (req, res, next) => {
           console.log(err);
           res.status(500).send('Internal Server Error');
         } else {
-          res.render('sampleDel', {topics: topics, topic: topic[0]});
+          res.render('topic/sampleDel', {topics: topics, topic: topic[0], user: req.user});
         }
       })
       .catch(err => {
@@ -43,13 +43,13 @@ router.get(['/:id/edit'], (req, res, next) => {
       var id = req.params.id;
       if(id) {
         db('topic').whereRaw('id=?', [id])
-          .then(topic => { res.render('sampleEdit', {topics: topics, topic:topic[0]}); })
+          .then(topic => { res.render('topic/sampleEdit', {topics: topics, topic:topic[0], user: req.user}); })
           .catch(err => {
             console.log(err);
             res.status(500).send('Internal Server Error');
           });
       } else {
-        res.render('sampleList', {topics: topics});
+        res.render('topic/sampleList', {topics: topics, user: req.user});
       }
     })
     .catch(err => {
@@ -73,7 +73,7 @@ router.post(['/:id/edit'], (req, res, next) => {
 });
 router.get('/add', (req, res, next) => {
   db.select('id', 'title').from('topic')
-    .then(rows => { res.render('sampleAdd', {topics: rows}); })
+    .then(rows => { res.render('topic/sampleAdd', {topics: rows, user: req.user}); })
     .catch(err => {
       console.log(err);
       res.status(500).send('Internal Server Error');
@@ -98,14 +98,14 @@ router.get(['/', '/:id'], (req, res, next) => {
       if(id) {
         db('topic').whereRaw('id=?', [id])
           .then(result => {
-            res.render('sampleList', {topics: rows, topic: result[0]});
+            res.render('topic/sampleList', {topics: rows, topic: result[0], user: req.user});
           })
           .catch(err => {
             console.log(err);
             res.status(500).send('Internal Server Error');
           });
       } else {
-        res.render('sampleList', {topics: rows});
+        res.render('topic/sampleList', {topics: rows, user: req.user});
       }
     })
     .catch(err => {
