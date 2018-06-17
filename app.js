@@ -8,8 +8,8 @@ var usersRouter = require('./routes/users');
 
 // extra module start
 var session = require('express-session');
-// var FileStore = require('session-file-store')(session);
-var MySQLStore = require('express-mysql-session')(session);
+var FileStore = require('session-file-store')(session);
+// var MySQLStore = require('express-mysql-session')(session);
 var bodyParser = require("body-parser");
 var multer = require('multer');
 var storage = multer.diskStorage({
@@ -22,7 +22,7 @@ var storage = multer.diskStorage({
 })
 var upload = multer({ storage: storage })
 // extra module end
-
+var topicRouter = require('./routes/topic');
 var app = express();
 
 // view engine setup
@@ -37,7 +37,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-
+app.use('/topic', topicRouter);
 
 // sample use code
 app.locals.pretty = true;
@@ -45,20 +45,20 @@ app.use('/user', express.static('uploads'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-var options = require('./config/dbinfo');
+// var options = require('./config/dbinfo');
 app.use(session({
   secret: '123!@#QWE',
   resave: false,
   saveUninitialized: true,
-  //store: new FileStore()
-  store: new MySQLStore(options)
+  store: new FileStore()
+  // store: new MySQLStore(options)
 }));
-var passport = require ('./config/passport')(app);
-var authRouter = require('./routes/auth')(passport);
-var topicRouter = require('./routes/topic');
+// var passport = require ('./config/passport')(app);
+var authRouter = require('./routes/auth')();
+//var topicRouter = require('./routes/topic');
 
 app.use('/auth', authRouter);
-app.use('/topic', topicRouter);
+//app.use('/topic', topicRouter);
 
 app.get('/upload', (req, res) => {
   res.render('sampleUpload');

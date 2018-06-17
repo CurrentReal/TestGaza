@@ -4,7 +4,7 @@ module.exports = function(app) {
   var passport = require('passport')
   var LocalStrategy = require('passport-local').Strategy;
   var FacebookStrategy = require('passport-facebook').Strategy;
-  var dbmode = '1';
+  var dbmode = '2';
   const db = require('./database')(dbmode);
 
   app.use(passport.initialize());
